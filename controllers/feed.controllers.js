@@ -4,20 +4,18 @@ import { ApiError } from "../utils/ApiError.utils.js";
 
 //#region Get Posts
 export function getPosts(req, res, next) {
-  res.status(200).json({
-    posts: [
-      {
-        _id: 1,
-        title: "First Post",
-        content: "Hello World!.",
-        imageUrl: "images/duck.png",
-        creator: {
-          name: "Oliver",
-        },
-        createdAt: new Date(),
-      },
-    ],
-  });
+  Post.find()
+    .then((posts) => {
+      res
+        .status(200)
+        .json({ message: "Posts Fetched Successfully", posts: posts });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 }
 //#endregion
 
@@ -69,6 +67,7 @@ export function createPost(req, res, next) {
 }
 //#endregion
 
+//#region Get Post
 export function getPost(req, res, next) {
   const { postId } = req.params;
 
@@ -78,6 +77,8 @@ export function getPost(req, res, next) {
         //NOTE: If we throw our error here inside of our then block it will get passed down to the catch which then the error gets handled
         throw new ApiError(404, "Post not found");
       }
+
+      res.status(200).json({ message: "Post Fetched", post: post });
     })
     .catch((err) => {
       if (!err.statusCode) {
@@ -86,3 +87,4 @@ export function getPost(req, res, next) {
       next(err);
     });
 }
+//#endregion
