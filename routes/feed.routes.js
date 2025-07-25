@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createPost,
+  deletePost,
   getPost,
   getPosts,
   updatePost,
@@ -23,5 +24,9 @@ router.post("/post", createPostValidation, createPost);
 
 //#region Put Routes
 router.put("/post/:postId", createPutValidation, updatePost);
+//#endregion
+
+//#region Delete Routes
+router.delete("/post/:postId", deletePost);
 //#endregion
 export default router;

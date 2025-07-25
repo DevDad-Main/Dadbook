@@ -95,7 +95,7 @@ export function getPost(req, res, next) {
 }
 //#endregion
 
-//#region Put
+//#region Put Update Post
 export function updatePost(req, res, next) {
   const postId = req.params.postId;
   const errors = validationResult(req);
@@ -141,5 +141,27 @@ export function updatePost(req, res, next) {
       // Async promise chain so we have to pass on the error like so
       next(err);
     });
+}
+//#endregion
+
+//#region Delete Post
+export function deletePost(req, res, next) {
+  const postId = req.params.postId;
+
+  //NOTE: First we find it by id and then do our checks then we can remove it by id later once we have verified users etc
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        throw new ApiError(404, "Post not found");
+      }
+      //TODO: Check logged in user created said post
+      removeImage(post.imageUrl);
+      return Post.findByIdAndDelete(postId);
+    })
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ message: "Post Deleted" });
+    })
+    .catch((err) => console.log(err));
 }
 //#endregion
