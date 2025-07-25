@@ -1,6 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import feedRoutes from "./routes/feed.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
@@ -52,6 +53,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/feed", feedRoutes);
+app.use("/auth", authRoutes);
 
 //INFO: This will be executed whenever an error is thrown or forwared with the next keyword.
 //TODO: Move this to Its own class and file with extra properties
