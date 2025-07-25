@@ -3,8 +3,12 @@ import {
   createPost,
   getPost,
   getPosts,
+  updatePost,
 } from "../controllers/feed.controllers.js";
-import { createPostValidation } from "../utils/validation.utils.js";
+import {
+  createPostValidation,
+  createPutValidation,
+} from "../utils/validation.utils.js";
 
 const router = express.Router();
 
@@ -17,4 +21,7 @@ router.get("/post/:postId", getPost);
 router.post("/post", createPostValidation, createPost);
 //#endregion
 
+//#region Put Routes
+router.put("/post/:postId", createPutValidation, updatePost);
+//#endregion
 export default router;

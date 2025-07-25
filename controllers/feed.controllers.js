@@ -1,6 +1,7 @@
 import { validationResult } from "express-validator";
 import { Post } from "../models/post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
+import { removeImage } from "../utils/deleteImage.utils.js";
 
 //#region Get Posts
 export function getPosts(req, res, next) {
@@ -30,16 +31,21 @@ export function createPost(req, res, next) {
       "Validation failed, entered data is incorrect",
       errors,
     );
-    // const error = new Error("Validation failed, entered data is incorrect");
-    // error.statusCode = 422;
-    // throw error;
   }
+
+  if (!req.file) {
+    throw new ApiError(422, "No image provided");
+  }
+
   // Create a post in the db
   const { title, content } = req.body;
+  const imageUrl = req.file.path;
+
   const post = new Post({
     title: title,
     content: content,
-    imageUrl: "/images/duck.png",
+    imageUrl: imageUrl,
+    // imageUrl: `/${imageUrl}`, // '/' needed to seperate url and /images folder
     creator: {
       name: "Oliver",
     },
@@ -84,6 +90,55 @@ export function getPost(req, res, next) {
       if (!err.statusCode) {
         err.statusCode = 500;
       }
+      next(err);
+    });
+}
+//#endregion
+
+//#region Put
+export function updatePost(req, res, next) {
+  const postId = req.params.postId;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    throw new ApiError(
+      422,
+      "Validation failed, entered data is incorrect",
+      errors,
+    );
+  }
+
+  // We know we have valid data if we reach this point
+  const { title, content } = req.body;
+  let imageUrl = req.body.image ? req.body.image : req.file.path;
+
+  if (!imageUrl) {
+    throw new ApiError(422, "No file picked.");
+  }
+
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        throw new ApiError(404, "Post not found");
+      }
+
+      if (imageUrl !== post.imageUrl) {
+        removeImage(post.imageUrl);
+      }
+
+      post.title = title;
+      post.imageUrl = imageUrl;
+      post.content = content;
+      return post.save(); // saving the users updated post
+    })
+    .then((result) => {
+      res.status(200).json({ message: "Post Updated", post: result });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      // Async promise chain so we have to pass on the error like so
       next(err);
     });
 }
