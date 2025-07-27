@@ -27,3 +27,5 @@ export const signupValidation = [
   body("password").trim().isLength({ min: 5 }),
   body("name").trim().not().isEmpty(),
 ];
+
+export const userStatusValidation = [body("status").trim().not().isEmpty()];

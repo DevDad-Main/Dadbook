@@ -77,3 +77,57 @@ export function login(req, res, next) {
     });
 }
 //#endregion
+
+//#region Get Status
+export function getStatus(req, res, next) {
+  User.findById(req.userId)
+    .then((user) => {
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      res
+        .status(200)
+        .json({ message: "Status Fetched Successfully", status: user.status });
+    })
+    .catch((err) => {
+      console.log(err);
+      console.log(err.statusCode);
+      next(err);
+    });
+}
+//#endregion
+
+//#region Update Status
+export function updateStatus(req, res, next) {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    throw new ApiError(
+      422,
+      "Validation failed, entered data is incorrect",
+      errors,
+    );
+  }
+  const { status } = req.body;
+
+  User.findById(req.userId)
+    .then((user) => {
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      user.status = status;
+      return user.save();
+    })
+    .then((result) => {
+      console.log(result);
+      res.status(200).json({ message: "Status Updated" });
+    })
+    .catch((err) => {
+      console.log(err);
+      console.log(err.statusCode);
+      next(err);
+    });
+}
+//#endregion

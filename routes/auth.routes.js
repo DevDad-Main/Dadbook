@@ -1,11 +1,25 @@
 import express from "express";
-import { signupValidation } from "../utils/validation.utils.js";
-import { signup, login } from "../controllers/auth.controller.js";
+import {
+  signupValidation,
+  userStatusValidation,
+} from "../utils/validation.utils.js";
+import {
+  signup,
+  login,
+  getStatus,
+  updateStatus,
+} from "../controllers/auth.controller.js";
+import { isAuthenticated } from "../middleware/isAuthenticated.middleware.js";
 
 const router = express.Router();
 
+//#region Get Routes
+router.get("/status", isAuthenticated, getStatus);
+//#endregion
+
 //#region Put Routes
 router.put("/signup", signupValidation, signup);
+router.put("/status", isAuthenticated, userStatusValidation, updateStatus);
 //#endregion;
 
 //#region Post Routes

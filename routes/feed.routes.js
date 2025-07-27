@@ -30,4 +30,5 @@ router.put("/post/:postId", isAuthenticated, createPutValidation, updatePost);
 //#region Delete Routes
 router.delete("/post/:postId", isAuthenticated, deletePost);
 //#endregion
+
 export default router;

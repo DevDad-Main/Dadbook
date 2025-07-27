@@ -114,7 +114,7 @@ export function getPost(req, res, next) {
 }
 //#endregion
 
-//#region Put Update Post
+//#region Update Post
 export function updatePost(req, res, next) {
   const postId = req.params.postId;
   const errors = validationResult(req);
