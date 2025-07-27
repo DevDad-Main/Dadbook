@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.utils.js";
 //TODO: Add to dotenv
 const SALT_ROUNDS = 12;
 
+//#region Signup
 export function signup(req, res, next) {
   const errors = validationResult(req);
   const { email, name, password } = req.body;
@@ -29,6 +30,34 @@ export function signup(req, res, next) {
     })
     .then((result) => {
       res.status(201).json({ message: "User Created", userId: result._id });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+}
+//#endregion
+
+//#region Login
+export function login(req, res, next) {
+  const { email, password } = req.body;
+  let loadedUser;
+
+  User.findOne({ email: email })
+    .then((user) => {
+      if (!user) {
+        // 401 -> Not Authenticated
+        throw new ApiError(401, "A user with this email could not be found");
+      }
+      loadedUser = user;
+      return bcrypt.compare(password, user.password);
+    })
+    .then((passwordMatch) => {
+      if (!passwordMatch) {
+        throw new ApiError(401, "Wrong password");
+      }
     })
     .catch((err) => {
       if (!err.statusCode) {
