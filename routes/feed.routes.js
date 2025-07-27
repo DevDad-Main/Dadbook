@@ -10,11 +10,12 @@ import {
   createPostValidation,
   createPutValidation,
 } from "../utils/validation.utils.js";
+import { isAuthenticated } from "../middleware/isAuthenticated.middleware.js";
 
 const router = express.Router();
 
 //#region Get Routes
-router.get("/posts", getPosts);
+router.get("/posts", isAuthenticated, getPosts);
 router.get("/post/:postId", getPost);
 //#endregion
 
