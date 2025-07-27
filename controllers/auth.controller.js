@@ -2,9 +2,10 @@ import { validationResult } from "express-validator";
 import { User } from "../models/user.models.js";
 import bcrypt from "bcryptjs";
 import { ApiError } from "../utils/ApiError.utils.js";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-//TODO: Add to dotenv
-const SALT_ROUNDS = 12;
+dotenv.config();
 
 //#region Signup
 export function signup(req, res, next) {
@@ -19,7 +20,7 @@ export function signup(req, res, next) {
     );
   }
   bcrypt
-    .hash(password, SALT_ROUNDS)
+    .hash(password, process.env.SALT_ROUNDS)
     .then((hashedPassword) => {
       const user = new User({
         email: email,
@@ -58,6 +59,14 @@ export function login(req, res, next) {
       if (!passwordMatch) {
         throw new ApiError(401, "Wrong password");
       }
+      const token = jwt.sign(
+        { email: loadedUser.email, userId: loadedUser._id.toString() },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1h",
+        },
+      );
+      res.status(200).json({ token: token, userId: loadedUser._id.toString() });
     })
     .catch((err) => {
       if (!err.statusCode) {
