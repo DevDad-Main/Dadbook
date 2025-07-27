@@ -2,6 +2,7 @@ import { validationResult } from "express-validator";
 import { Post } from "../models/post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { removeImage } from "../utils/deleteImage.utils.js";
+import { User } from "../models/user.models.js";
 
 //#region Get Posts
 export function getPosts(req, res, next) {
@@ -53,23 +54,28 @@ export function createPost(req, res, next) {
   // Create a post in the db
   const { title, content } = req.body;
   const imageUrl = req.file.path;
-
+  let creator;
   const post = new Post({
     title: title,
     content: content,
     imageUrl: imageUrl,
-    // imageUrl: `/${imageUrl}`, // '/' needed to seperate url and /images folder
-    creator: {
-      name: "Oliver",
-    },
+    creator: req.userId, // Mongoose will convert this to the id
   });
   post
     .save()
     .then((result) => {
-      console.log(result);
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      creator = user;
+      user.posts.push(post);
+      return user.save();
+    })
+    .then((result) => {
       res.status(201).json({
         message: "Post created successfully!",
-        post: result,
+        post: post,
+        creator: { _id: creator._id, name: creator.name },
       });
     })
     .catch((err) => {
