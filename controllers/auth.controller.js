@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
+const SALT_ROUNDS = 12;
 
 //#region Signup
 export function signup(req, res, next) {
@@ -20,7 +21,7 @@ export function signup(req, res, next) {
     );
   }
   bcrypt
-    .hash(password, process.env.SALT_ROUNDS)
+    .hash(password, SALT_ROUNDS)
     .then((hashedPassword) => {
       const user = new User({
         email: email,
@@ -75,3 +76,4 @@ export function login(req, res, next) {
       next(err);
     });
 }
+//#endregion

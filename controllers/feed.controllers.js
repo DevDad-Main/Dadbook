@@ -141,6 +141,10 @@ export function updatePost(req, res, next) {
         throw new ApiError(404, "Post not found");
       }
 
+      if (post.creator.toString() !== req.userId.toString()) {
+        //INFO: 403 good for unauthorized issues
+        throw new ApiError(403, "Not authorized");
+      }
       if (imageUrl !== post.imageUrl) {
         removeImage(post.imageUrl);
       }
@@ -173,6 +177,12 @@ export function deletePost(req, res, next) {
       if (!post) {
         throw new ApiError(404, "Post not found");
       }
+
+      if (post.creator.toString() !== req.userId.toString()) {
+        //INFO: 403 good for unauthorized issues
+        throw new ApiError(403, "Not authorized");
+      }
+
       //TODO: Check logged in user created said post
       removeImage(post.imageUrl);
       return Post.findByIdAndDelete(postId);
@@ -181,6 +191,14 @@ export function deletePost(req, res, next) {
       console.log(result);
       res.status(200).json({ message: "Post Deleted" });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      //WARN: Technically dont need this as we are setting the status code and error above
+      // if (!err.statusCode) {
+      //   err.statusCode = 500;
+      // }
+      console.log(err.statusCode);
+      console.log(err);
+      next(err);
+    });
 }
 //#endregion
