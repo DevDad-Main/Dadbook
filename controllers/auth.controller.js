@@ -49,13 +49,13 @@ export async function login(req, res, next) {
       throw new ApiError(401, "Wrong password");
     }
     const token = jwt.sign(
-      { email: loadedUser.email, userId: loadedUser._id.toString() },
+      { email: user.email, userId: user._id.toString() },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
       },
     );
-    res.status(200).json({ token: token, userId: loadedUser._id.toString() });
+    res.status(200).json({ token: token, userId: user._id.toString() });
   } catch (err) {
     next(err);
   }

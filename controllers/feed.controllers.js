@@ -11,6 +11,7 @@ export async function getPosts(req, res, next) {
   try {
     const totalItems = await Post.find().countDocuments();
     const posts = await Post.find()
+      .populate("creator")
       .skip((currentPage - 1) * perPage)
       .limit(perPage);
     res.status(200).json({
@@ -79,7 +80,7 @@ export async function createPost(req, res, next) {
 export async function getPost(req, res, next) {
   const { postId } = req.params;
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate("creator");
     if (!post) {
       //NOTE: If we throw our error here inside of our then block it will get passed down to the catch which then the error gets handled
       throw new ApiError(404, "Post not found");
