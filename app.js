@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
+import { Server } from "socket.io";
 
 dotenv.config();
 const app = express();
@@ -67,6 +68,19 @@ app.use("/auth", authRoutes);
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((result) => {
-    app.listen(8080);
+    // This will return us our node server
+    const server = app.listen(process.env.PORT);
+    const io = new Server(server, {
+      cors: {
+        origin: "http://localhost:3000",
+        methods: ["GET", "POST"],
+      },
+    });
+
+    // Socket io uses our http server and adds on top of it
+    // It Will use the web sockets with our server
+    io.on("connection", (socket) => {
+      console.log("Client Connected");
+    });
   })
   .catch((err) => console.log(err));
