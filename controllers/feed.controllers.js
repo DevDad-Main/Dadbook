@@ -28,7 +28,7 @@ export async function getPosts(req, res, next) {
 //#endregion
 
 //#region Create Post
-export function createPost(req, res, next) {
+export async function createPost(req, res, next) {
   const errors = validationResult(req);
 
   // Due to us not being in an async function this will exit the method execution right away and move onto thenext error handling middleware
@@ -47,39 +47,29 @@ export function createPost(req, res, next) {
   // Create a post in the db
   const { title, content } = req.body;
   const imageUrl = req.file.path;
-  let creator;
   const post = new Post({
     title: title,
     content: content,
     imageUrl: imageUrl,
     creator: req.userId, // Mongoose will convert this to the id
   });
-  post
-    .save()
-    .then((result) => {
-      return User.findById(req.userId);
-    })
-    .then((user) => {
-      creator = user;
-      user.posts.push(post);
-      return user.save();
-    })
-    .then((result) => {
-      res.status(201).json({
-        message: "Post created successfully!",
-        post: post,
-        creator: { _id: creator._id, name: creator.name },
-      });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      // Async promise chain so we have to pass on the error like so
-      next(err);
+
+  try {
+    await post.save();
+    const user = await User.findById(req.userId);
+    user.posts.push(post);
+    await user.save();
+    res.status(201).json({
+      message: "Post created successfully!",
+      post: post,
+      creator: { _id: user._id, name: user.name },
     });
-  // const title = req.body.title;
-  // const content = req.body.content;
+  } catch (err) {
+    // Async promise chain so we have to pass on the error like so
+    console.log(err);
+    console.log(err.statusCode);
+    next(err);
+  }
 
   // 200 is just success, 201 is success but with new data
 }
@@ -105,7 +95,7 @@ export async function getPost(req, res, next) {
 //#endregion
 
 //#region Update Post
-export function updatePost(req, res, next) {
+export async function updatePost(req, res, next) {
   const postId = req.params.postId;
   const errors = validationResult(req);
 
@@ -125,76 +115,61 @@ export function updatePost(req, res, next) {
     throw new ApiError(422, "No file picked.");
   }
 
-  Post.findById(postId)
-    .then((post) => {
-      if (!post) {
-        throw new ApiError(404, "Post not found");
-      }
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
 
-      if (post.creator.toString() !== req.userId.toString()) {
-        //INFO: 403 good for unauthorized issues
-        throw new ApiError(403, "Not authorized");
-      }
-      if (imageUrl !== post.imageUrl) {
-        removeImage(post.imageUrl);
-      }
+    if (post.creator.toString() !== req.userId) {
+      //INFO: 403 good for unauthorized issues
+      throw new ApiError(403, "Not authorized");
+    }
+    if (imageUrl !== post.imageUrl) {
+      removeImage(post.imageUrl);
+    }
 
-      post.title = title;
-      post.imageUrl = imageUrl;
-      post.content = content;
-      return post.save(); // saving the users updated post
-    })
-    .then((result) => {
-      res.status(200).json({ message: "Post Updated", post: result });
-    })
-    .catch((err) => {
-      if (!err.statusCode) {
-        err.statusCode = 500;
-      }
-      // Async promise chain so we have to pass on the error like so
-      next(err);
-    });
+    post.title = title;
+    post.imageUrl = imageUrl;
+    post.content = content;
+
+    const result = await post.save(); // saving the users updated post
+    res.status(200).json({ message: "Post Updated", post: result });
+  } catch (err) {
+    console.log(err);
+    console.log(err.statusCode);
+    next(err);
+  }
 }
 //#endregion
 
 //#region Delete Post
-export function deletePost(req, res, next) {
+export async function deletePost(req, res, next) {
   const postId = req.params.postId;
 
   //NOTE: First we find it by id and then do our checks then we can remove it by id later once we have verified users etc
-  Post.findById(postId)
-    .then((post) => {
-      if (!post) {
-        throw new ApiError(404, "Post not found");
-      }
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
 
-      if (post.creator.toString() !== req.userId.toString()) {
-        //INFO: 403 good for unauthorized issues
-        throw new ApiError(403, "Not authorized");
-      }
+    if (post.creator.toString() !== req.userId.toString()) {
+      //INFO: 403 good for unauthorized issues
+      throw new ApiError(403, "Not authorized");
+    }
 
-      //TODO: Check logged in user created said post
-      removeImage(post.imageUrl);
-      return Post.findByIdAndDelete(postId);
-    })
-    .then((result) => {
-      return User.findById(req.userId);
-    })
-    .then((user) => {
-      user.posts.pull(postId);
-      return user.save();
-    })
-    .then((result) => {
-      res.status(200).json({ message: "Post Deleted" });
-    })
-    .catch((err) => {
-      //WARN: Technically dont need this as we are setting the status code and error above
-      // if (!err.statusCode) {
-      //   err.statusCode = 500;
-      // }
-      console.log(err.statusCode);
-      console.log(err);
-      next(err);
-    });
+    //TODO: Check logged in user created said post
+    removeImage(post.imageUrl);
+    await Post.findByIdAndDelete(postId);
+    const user = User.findById(req.userId);
+    user.posts.pull(postId);
+    await user.save();
+    res.status(200).json({ message: "Post Deleted" });
+  } catch (err) {
+    console.log(err.statusCode);
+    console.log(err);
+    next(err);
+  }
 }
 //#endregion
