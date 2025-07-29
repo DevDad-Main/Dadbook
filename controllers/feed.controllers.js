@@ -123,12 +123,13 @@ export async function updatePost(req, res, next) {
   }
 
   try {
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate("creator");
     if (!post) {
       throw new ApiError(404, "Post not found");
     }
 
-    if (post.creator.toString() !== req.userId) {
+    console.log(post);
+    if (post.creator._id.toString() !== req.userId) {
       //INFO: 403 good for unauthorized issues
       throw new ApiError(403, "Not authorized");
     }
@@ -139,8 +140,10 @@ export async function updatePost(req, res, next) {
     post.title = title;
     post.imageUrl = imageUrl;
     post.content = content;
-
     const result = await post.save(); // saving the users updated post
+
+    config.getIO().emit("posts", { action: "update", post: result });
+
     res.status(200).json({ message: "Post Updated", post: result });
   } catch (err) {
     console.log(err);
@@ -161,15 +164,16 @@ export async function deletePost(req, res, next) {
       throw new ApiError(404, "Post not found");
     }
 
-    if (post.creator.toString() !== req.userId.toString()) {
+    if (post.creator.toString() !== req.userId) {
       //INFO: 403 good for unauthorized issues
       throw new ApiError(403, "Not authorized");
     }
 
     //TODO: Check logged in user created said post
     removeImage(post.imageUrl);
-    await Post.findByIdAndDelete(postId);
-    const user = User.findById(req.userId);
+    const deletedPost = await Post.findByIdAndDelete(postId);
+    console.log(deletedPost);
+    const user = await User.findById(req.userId);
     user.posts.pull(postId);
     await user.save();
     res.status(200).json({ message: "Post Deleted" });

@@ -6,7 +6,7 @@ export const config = {
     io = new Server(httpServer, {
       cors: {
         origin: "http://localhost:3000",
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT", "DELETE"],
       },
     });
     return io;
