@@ -3,6 +3,7 @@ import { Post } from "../models/post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import { removeImage } from "../utils/deleteImage.utils.js";
 import { User } from "../models/user.models.js";
+import { config } from "../socket.js";
 
 //#region Get Posts
 export async function getPosts(req, res, next) {
@@ -60,6 +61,11 @@ export async function createPost(req, res, next) {
     const user = await User.findById(req.userId);
     user.posts.push(post);
     await user.save();
+
+    // INFO: Emit sends to all users connected
+    // INFO: Broadcast sends to all users connected except the one that made the post
+    config.getIO().emit("posts", { action: "create", post: post });
+
     res.status(201).json({
       message: "Post created successfully!",
       post: post,

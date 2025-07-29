@@ -8,7 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
 import { Server } from "socket.io";
-
+import { config } from "./socket.js";
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -70,12 +70,7 @@ mongoose
   .then((result) => {
     // This will return us our node server
     const server = app.listen(process.env.PORT);
-    const io = new Server(server, {
-      cors: {
-        origin: "http://localhost:3000",
-        methods: ["GET", "POST"],
-      },
-    });
+    const io = config.init(server);
 
     // Socket io uses our http server and adds on top of it
     // It Will use the web sockets with our server
