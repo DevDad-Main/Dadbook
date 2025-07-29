@@ -173,10 +173,14 @@ export async function deletePost(req, res, next) {
     //TODO: Check logged in user created said post
     removeImage(post.imageUrl);
     const deletedPost = await Post.findByIdAndDelete(postId);
-    console.log(deletedPost);
+
     const user = await User.findById(req.userId);
     user.posts.pull(postId);
+
     await user.save();
+
+    config.getIO().emit("posts", { action: "delete", post: postId });
+
     res.status(200).json({ message: "Post Deleted" });
   } catch (err) {
     console.log(err.statusCode);
