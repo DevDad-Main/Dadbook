@@ -1,18 +1,22 @@
 import express from "express";
 import bodyParser from "body-parser";
-import feedRoutes from "./routes/feed.routes.js";
-import authRoutes from "./routes/auth.routes.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import multer from "multer";
-import { Server } from "socket.io";
-import { config } from "./socket.js";
+import { createHandler } from "graphql-http/lib/use/express";
+import { schema } from "./graphql/schema.graphql.js";
+import resolver from "./graphql/resolvers.graphql.js";
+
+//#region Constants
 dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+//#endregion
+
+//#region Multer Local File Storage
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "images");
@@ -21,7 +25,9 @@ const fileStorage = multer.diskStorage({
     cb(null, new Date().toISOString() + "-" + file.originalname);
   },
 });
+//#endregion
 
+//#region Multer Iamge Type Filter
 const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/png" ||
@@ -33,6 +39,7 @@ const fileFilter = (req, file, cb) => {
     cb(null, false);
   }
 };
+//#endregion
 
 // This is what we used previously x-www-form-urlencoded when using forms
 // app.use(bodyParser.urlencoded({ extended: true }));
@@ -53,29 +60,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/feed", feedRoutes);
-app.use("/auth", authRoutes);
-
-//INFO: This will be executed whenever an error is thrown or forwared with the next keyword.
-//TODO: Move this to Its own class and file with extra properties
-// app.use((error, req, res, next) => {
-//   console.log(error);
-//   const status = error.statusCode || 500;
-//   const message = error.message;
-//   res.status(status).json({ message: message });
-// });
+app.use("/graphql", createHandler({ schema: schema, rootValue: resolver }));
 
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((result) => {
     // This will return us our node server
-    const server = app.listen(process.env.PORT);
-    const io = config.init(server);
-
-    // Socket io uses our http server and adds on top of it
-    // It Will use the web sockets with our server
-    io.on("connection", (socket) => {
-      console.log("Client Connected");
-    });
+    app.listen(process.env.PORT);
   })
   .catch((err) => console.log(err));
