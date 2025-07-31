@@ -9,6 +9,7 @@ import { createHandler } from "graphql-http/lib/use/express";
 import { schema } from "./graphql/schema.graphql.js";
 import resolver from "./graphql/resolvers.graphql.js";
 import { altairExpress } from "altair-express-middleware";
+import cors from "cors";
 
 //#region Constants
 dotenv.config();
@@ -51,15 +52,30 @@ app.use(
 );
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, PATCH, DELETE",
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN, // or your frontend URL
+    methods: ["POST", "GET", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // only if we are using cookies or auth headers
+  }),
+);
+
+//#region Old CORS Setup
+// app.use((req, res, next) => {
+//   res.setHeader("Access-Control-Allow-Origin", "*");
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, PATCH, DELETE",
+//   );
+//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+//
+//   if (req.method === "OPTIONS") {
+//     return res.status(200);
+//   }
+//   next();
+// });
+//#endregion
 
 app.use(
   "/graphql",

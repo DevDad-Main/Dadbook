@@ -25,7 +25,7 @@ export default {
     }
     //#endregion
 
-    const email = userInput.email.toLowerCase();
+    const email = userInput.email;
 
     const exisitingUser = await User.findOne({ email: email });
     if (exisitingUser) {
