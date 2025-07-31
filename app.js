@@ -61,7 +61,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/graphql", createHandler({ schema: schema, rootValue: resolver }));
+app.use(
+  "/graphql",
+  createHandler({
+    schema: schema,
+    rootValue: resolver,
+  }),
+);
 app.use(
   "/altair",
   altairExpress({

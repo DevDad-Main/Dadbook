@@ -1,12 +1,31 @@
 import { User } from "../models/user.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import bcrypt from "bcryptjs";
+import validator from "validator";
 
 const SALT_ROUNDS = 12;
 
 export default {
   createUser: async function ({ userInput }, req) {
-    const email = userInput.email;
+    const errors = [];
+
+    //#region Validation
+    if (!validator.isEmail(userInput.email)) {
+      throw new ApiError(422, "Invalid email address", errors);
+    }
+    if (
+      validator.isEmpty(userInput.password) ||
+      !validator.isLength(userInput.password, { min: 5 })
+    ) {
+      throw new ApiError(422, "Please enter a valid name and password", errors);
+    }
+
+    if (errors.length > 0) {
+      throw new ApiError(422, "Invalid input");
+    }
+    //#endregion
+
+    const email = userInput.email.toLowerCase();
 
     const exisitingUser = await User.findOne({ email: email });
     if (exisitingUser) {
