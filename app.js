@@ -8,6 +8,7 @@ import multer from "multer";
 import { createHandler } from "graphql-http/lib/use/express";
 import { schema } from "./graphql/schema.graphql.js";
 import resolver from "./graphql/resolvers.graphql.js";
+import { altairExpress } from "altair-express-middleware";
 
 //#region Constants
 dotenv.config();
@@ -61,7 +62,12 @@ app.use((req, res, next) => {
 });
 
 app.use("/graphql", createHandler({ schema: schema, rootValue: resolver }));
-
+app.use(
+  "/altair",
+  altairExpress({
+    endpointURL: "/graphql",
+  }),
+);
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((result) => {
