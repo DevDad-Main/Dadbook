@@ -10,7 +10,7 @@ import { schema } from "./graphql/schema.graphql.js";
 import resolver from "./graphql/resolvers.graphql.js";
 import { altairExpress } from "altair-express-middleware";
 import cors from "cors";
-import { Authentication } from "./middleware/Authentication.middleware.js";
+import { isAuthenticated } from "./middleware/Authentication.middleware.js";
 
 //#region Constants
 dotenv.config();
@@ -81,13 +81,19 @@ app.use(
 //NOTE: Runs on every request but it dosent deny said requests.
 // Sets the property isAuth to false and then in our resolvers
 // We determine whether to continue or not
-app.use(Authentication);
+app.use(isAuthenticated);
 
 app.use(
   "/graphql",
   createHandler({
     schema: schema,
     rootValue: resolver,
+    context: (req, res) => {
+      return {
+        isAuth: req.raw.isAuth,
+        userId: req.raw.userId,
+      };
+    },
   }),
 );
 
