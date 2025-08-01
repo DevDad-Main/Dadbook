@@ -10,6 +10,7 @@ dotenv.config();
 
 const SALT_ROUNDS = 12;
 
+//#region Helper Functions
 function checkIsEmptyAndMinLength(itemTocheck, length) {
   if (
     validator.isEmpty(itemTocheck) ||
@@ -19,6 +20,7 @@ function checkIsEmptyAndMinLength(itemTocheck, length) {
   }
   return false;
 }
+//#endregion
 
 export default {
   //#region Create User
@@ -76,8 +78,12 @@ export default {
     return { token: token, userId: user._id.toString() };
   },
   //#endregion
-  //#region Creat Post
+  //#region Create Post
   createPost: async function ({ postInput }, req) {
+    //WARN: If we are not authenticated then we dont process the below code
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
     const errors = [];
     const titleValidation = checkIsEmptyAndMinLength(postInput.title, 5);
     const contentValidation = checkIsEmptyAndMinLength(postInput.content, 5);
@@ -99,12 +105,19 @@ export default {
     //   errors.push({ message: "Invalid title" });
     // }
 
+    const user = await User.findById(req.userId);
+    if (!user) {
+      throw new ApiError(401, "Invalid User");
+    }
     const post = new Post({
       title: postInput.title,
       content: postInput.content,
       imageUrl: postInput.imageUrl,
+      creater: user,
     });
     const createdPost = await post.save();
+    user.posts.push(createdPost);
+
     // Add post to users posts array
     return {
       ...createdPost._doc,

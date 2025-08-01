@@ -10,6 +10,7 @@ import { schema } from "./graphql/schema.graphql.js";
 import resolver from "./graphql/resolvers.graphql.js";
 import { altairExpress } from "altair-express-middleware";
 import cors from "cors";
+import { Authentication } from "./middleware/Authentication.middleware.js";
 
 //#region Constants
 dotenv.config();
@@ -77,6 +78,11 @@ app.use(
 // });
 //#endregion
 
+//NOTE: Runs on every request but it dosent deny said requests.
+// Sets the property isAuth to false and then in our resolvers
+// We determine whether to continue or not
+app.use(Authentication);
+
 app.use(
   "/graphql",
   createHandler({
@@ -84,12 +90,16 @@ app.use(
     rootValue: resolver,
   }),
 );
+
+//#region Better version of graphiql -> playground for testing graphql queries etc
 app.use(
   "/altair",
   altairExpress({
     endpointURL: "/graphql",
   }),
 );
+//#endregion
+
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((result) => {
