@@ -1,4 +1,5 @@
 import { User } from "../models/user.models.js";
+import { Post } from "../models/post.models.js";
 import { ApiError } from "../utils/ApiError.utils.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -9,7 +10,18 @@ dotenv.config();
 
 const SALT_ROUNDS = 12;
 
+function checkIsEmptyAndMinLength(itemTocheck, length) {
+  if (
+    validator.isEmpty(itemTocheck) ||
+    !validator.isLength(itemTocheck, { min: length })
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export default {
+  //#region Create User
   createUser: async function ({ userInput }, req) {
     const errors = [];
 
@@ -43,6 +55,8 @@ export default {
     console.log(createdUser._doc);
     return { ...createdUser._doc, _id: createdUser._id.toString() };
   },
+  //#endregion
+  //#region Login
   login: async function ({ email, password }, req) {
     const user = await User.findOne({ email: email });
     if (!user) {
@@ -61,4 +75,43 @@ export default {
     );
     return { token: token, userId: user._id.toString() };
   },
+  //#endregion
+  //#region Creat Post
+  createPost: async function ({ postInput }, req) {
+    const errors = [];
+    const titleValidation = checkIsEmptyAndMinLength(postInput.title, 5);
+    const contentValidation = checkIsEmptyAndMinLength(postInput.content, 5);
+
+    if (titleValidation) {
+      errors.push({ message: "Invalid title" });
+    }
+    if (contentValidation) {
+      errors.push({ message: "Content is invalid" });
+    }
+
+    if (errors.length > 0) {
+      throw new ApiError(422, "Invalid input", errors);
+    }
+    // if (
+    //   validator.isEmpty(postInput.title) ||
+    //   !validator.isLength(postInput.title, { min: 5 })
+    // ) {
+    //   errors.push({ message: "Invalid title" });
+    // }
+
+    const post = new Post({
+      title: postInput.title,
+      content: postInput.content,
+      imageUrl: postInput.imageUrl,
+    });
+    const createdPost = await post.save();
+    // Add post to users posts array
+    return {
+      ...createdPost._doc,
+      _id: createdPost._id.toString(),
+      createdAt: createdPost.createdAt.toISOString(),
+      updatedAt: createdPost.updatedAt.toISOString(),
+    };
+  },
+  //#endregion
 };
