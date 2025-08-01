@@ -13,9 +13,9 @@ export const schema = buildSchema(`
 
     type User {
       _id: ID!
-      name: String!
       email: String!
       password: String
+      name: String!
       status: String!
       posts: [Post!]!
     }

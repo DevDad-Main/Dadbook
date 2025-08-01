@@ -29,19 +29,18 @@ export default {
     }
     //#endregion
 
-    const email = userInput.email;
-
-    const exisitingUser = await User.findOne({ email: email });
+    const exisitingUser = await User.findOne({ email: userInput.email });
     if (exisitingUser) {
       throw new ApiError(401, "User exists already");
     }
     const hashedPassword = await bcrypt.hash(userInput.password, SALT_ROUNDS);
     const user = new User({
-      email: email,
-      password: hashedPassword,
+      email: userInput.email,
       name: userInput.name,
+      password: hashedPassword,
     });
     const createdUser = await user.save();
+    console.log(createdUser._doc);
     return { ...createdUser._doc, _id: createdUser._id.toString() };
   },
   login: async function ({ email, password }, req) {
@@ -51,6 +50,7 @@ export default {
     }
     const isEqual = await bcrypt.compare(password, user.password);
     if (!isEqual) {
+      console.log(`Passsword: ${password} | User Password: ${user.password}`);
       throw new ApiError(401, "Wrong password");
     }
 
