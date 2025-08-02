@@ -11,6 +11,7 @@ import resolver from "./graphql/resolvers.graphql.js";
 import { altairExpress } from "altair-express-middleware";
 import cors from "cors";
 import { isAuthenticated } from "./middleware/Authentication.middleware.js";
+import { removeImage } from "./utils/deleteImage.utils.js";
 
 //#region Constants
 dotenv.config();
@@ -56,7 +57,7 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN, // or your frontend URL
-    methods: ["POST", "GET", "OPTIONS"],
+    methods: ["POST", "PUT", "GET", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -82,11 +83,30 @@ app.use(
 // });
 //#endregion
 
-//NOTE: Runs on every request but it dosent deny said requests.
+//NOTE: Runs on every request but it doesn't deny said requests.
 // Sets the property isAuth to false and then in our resolvers
 // We determine whether to continue or not
 app.use(isAuthenticated);
 
+app.put("/post-image", (req, res, next) => {
+  if (!req.isAuth) {
+    throw new ApiError(401, "User not authenticated");
+  }
+
+  if (!req.file) {
+    return res.status(200).json({ message: "No file Provided" });
+  }
+
+  if (req.body.oldPath) {
+    removeImage(req.body.oldPath);
+  }
+
+  return res
+    .status(201)
+    .json({ message: "File Stored", filePath: req.file.path });
+});
+
+//#region GraphQL Middleware
 app.all("/graphql", (req, res) =>
   createHandler({
     schema: schema,
@@ -107,6 +127,7 @@ app.all("/graphql", (req, res) =>
     // },
   })(req, res),
 );
+//#endregion
 
 //#region Better version of graphiql -> playground for testing graphql queries etc
 app.use(
@@ -117,6 +138,7 @@ app.use(
 );
 //#endregion
 
+//#region Mongoose DB Connection
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((result) => {
@@ -124,3 +146,4 @@ mongoose
     app.listen(process.env.PORT);
   })
   .catch((err) => console.log(err));
+//#endregion
