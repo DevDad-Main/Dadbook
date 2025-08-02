@@ -23,8 +23,12 @@ function checkIsEmptyAndMinLength(itemTocheck, length) {
 //#endregion
 
 export default {
+  /*
+   *  context -> Shared data like auth info, DB access, user ID, etc.
+   *  info -> Metadata about the query (field name, AST, schema, etc.)
+   */
   //#region Create User
-  createUser: async function ({ userInput }, req) {
+  createUser: async function ({ userInput }, _context, _info) {
     const errors = [];
 
     //#region Validation
@@ -79,7 +83,7 @@ export default {
   },
   //#endregion
   //#region Create Post
-  createPost: async function ({ postInput }, req) {
+  createPost: async function ({ postInput }, { req }) {
     //WARN: If we are not authenticated then we dont process the below code
     if (!req.isAuth) {
       throw new ApiError(401, "Not Authenticated");
@@ -98,12 +102,6 @@ export default {
     if (errors.length > 0) {
       throw new ApiError(422, "Invalid input", errors);
     }
-    // if (
-    //   validator.isEmpty(postInput.title) ||
-    //   !validator.isLength(postInput.title, { min: 5 })
-    // ) {
-    //   errors.push({ message: "Invalid title" });
-    // }
 
     const user = await User.findById(req.userId);
     if (!user) {
@@ -113,10 +111,11 @@ export default {
       title: postInput.title,
       content: postInput.content,
       imageUrl: postInput.imageUrl,
-      creater: user,
+      creator: user,
     });
     const createdPost = await post.save();
     user.posts.push(createdPost);
+    await user.save();
 
     // Add post to users posts array
     return {
@@ -124,6 +123,28 @@ export default {
       _id: createdPost._id.toString(),
       createdAt: createdPost.createdAt.toISOString(),
       updatedAt: createdPost.updatedAt.toISOString(),
+    };
+  },
+  //#endregion
+  //#region Get Posts
+  posts: async function (args, { req }) {
+    //WARN: If we are not authenticated then we dont process the below code
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+    const totalPosts = await Post.find().countDocuments();
+    const posts = await Post.find().sort({ createdAt: -1 }).populate("creator");
+
+    return {
+      posts: posts.map((post) => {
+        return {
+          ...post._doc,
+          _id: post._id.toString(),
+          createdAt: post.createdAt.toISOString(),
+          updatedAt: post.updatedAt.toISOString(),
+        };
+      }),
+      totalPosts: totalPosts,
     };
   },
   //#endregion

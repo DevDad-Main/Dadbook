@@ -57,7 +57,11 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN, // or your frontend URL
     methods: ["POST", "GET", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      // "Access-Control-Allow-Headers",
+    ],
     credentials: true, // only if we are using cookies or auth headers
   }),
 );
@@ -83,18 +87,25 @@ app.use(
 // We determine whether to continue or not
 app.use(isAuthenticated);
 
-app.use(
-  "/graphql",
+app.all("/graphql", (req, res) =>
   createHandler({
     schema: schema,
     rootValue: resolver,
-    context: (req, res) => {
+    context: { req, res },
+    formatError(err) {
+      if (!err.originalError) {
+        return err;
+      }
+      const data = err.originalError.data;
+      const message = err.message || "An error occurred.";
+      const code = err.originalError.code || 500;
       return {
-        isAuth: req.raw.isAuth,
-        userId: req.raw.userId,
+        message: message,
+        status: code,
+        data: data,
       };
     },
-  }),
+  })(req, res),
 );
 
 //#region Better version of graphiql -> playground for testing graphql queries etc
