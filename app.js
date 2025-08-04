@@ -57,7 +57,7 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN, // or your frontend URL
-    methods: ["POST", "PUT", "GET", "OPTIONS"],
+    methods: ["POST", "PUT", "GET", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",

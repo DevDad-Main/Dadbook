@@ -157,4 +157,23 @@ export default {
     };
   },
   //#endregion
+  //#region Get Post By ID
+  post: async function ({ id }, { req }) {
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+
+    const post = await Post.findById(id).populate("creator");
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
+
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+    };
+  },
+  //#endregion
 };
