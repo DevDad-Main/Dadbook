@@ -88,6 +88,7 @@ export default {
     if (!req.isAuth) {
       throw new ApiError(401, "Not Authenticated");
     }
+    //#region Validation
     const errors = [];
     const titleValidation = checkIsEmptyAndMinLength(postInput.title, 5);
     const contentValidation = checkIsEmptyAndMinLength(postInput.content, 5);
@@ -102,6 +103,7 @@ export default {
     if (errors.length > 0) {
       throw new ApiError(422, "Invalid input", errors);
     }
+    //#endregion
 
     const user = await User.findById(req.userId);
     if (!user) {
@@ -173,6 +175,54 @@ export default {
       _id: post._id.toString(),
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString(),
+    };
+  },
+  //#endregion
+  //#region Update Post
+  updatePost: async function ({ id, postInput }, { req }) {
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+
+    const post = await Post.findById(id).populate("creator");
+
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
+
+    if (post.creator._id.toString() !== req.userId.toString()) {
+      throw new ApiError(403, "Not authorized");
+    }
+
+    //#region Validation
+    const errors = [];
+    const titleValidation = checkIsEmptyAndMinLength(postInput.title, 5);
+    const contentValidation = checkIsEmptyAndMinLength(postInput.content, 5);
+
+    if (titleValidation) {
+      errors.push({ message: "Invalid title" });
+    }
+    if (contentValidation) {
+      errors.push({ message: "Content is invalid" });
+    }
+
+    if (errors.length > 0) {
+      throw new ApiError(422, "Invalid input", errors);
+    }
+    //#endregion
+
+    post.title = postInput.title;
+    post.content = postInput.content;
+    // Override the old image with the new one otherwise we ignore
+    if (postInput.imageUrl !== "undefined") {
+      post.imageUrl = postInput.imageUrl;
+    }
+    const updatedPost = await post.save();
+    return {
+      ...updatedPost._doc,
+      _id: updatedPost._id.toString(),
+      createdAt: updatedPost.createdAt.toISOString(),
+      updatedAt: updatedPost.updatedAt.toISOString(),
     };
   },
   //#endregion
