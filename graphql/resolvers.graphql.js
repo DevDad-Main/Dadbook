@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { removeImage } from "../utils/deleteImage.utils.js";
 
 dotenv.config();
 
@@ -223,6 +224,81 @@ export default {
       _id: updatedPost._id.toString(),
       createdAt: updatedPost.createdAt.toISOString(),
       updatedAt: updatedPost.updatedAt.toISOString(),
+    };
+  },
+  //#endregion
+  //#region Delete Post
+  deletePost: async function ({ id }, { req }) {
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+
+    const post = await Post.findById(id);
+
+    if (!post) {
+      throw new ApiError(404, "Post not found");
+    }
+
+    console.log(post._doc);
+
+    console.log(
+      `Post Creator: ${post.creator.toString()}\n User ID: ${req.userId}`,
+    );
+
+    if (post.creator.toString() !== req.userId.toString()) {
+      throw new ApiError(403, "Not authorized");
+    }
+
+    try {
+      removeImage(post.imageUrl);
+      const deletedPost = await Post.findByIdAndDelete(id);
+
+      const user = await User.findById(req.userId);
+      user.posts.pull(id);
+
+      await user.save();
+      return true;
+    } catch (err) {
+      console.log(err.statusCode);
+      console.log(err);
+      next(err);
+      return false;
+    }
+  },
+  //#endregion
+  //#region Get Status
+  user: async function (args, { req }) {
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    return {
+      ...user._doc,
+      _id: user._id.toString(),
+    };
+  },
+  //#endregion
+  //#region Update Status
+  updateStatus: async function ({ status }, { req }) {
+    if (!req.isAuth) {
+      throw new ApiError(401, "Not Authenticated");
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    user.status = status;
+    await user.save();
+    return {
+      ...user._doc,
+      _id: user._id.toString(),
     };
   },
   //#endregion
