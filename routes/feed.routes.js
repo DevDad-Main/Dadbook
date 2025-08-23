@@ -10,7 +10,7 @@ import {
   createPostValidation,
   createPutValidation,
 } from "../utils/validation.utils.js";
-import { isAuthenticated } from "../middleware/isAuthenticated.middleware.js";
+import { isAuthenticated } from "../middleware/Authentication.middleware.js";
 
 const router = express.Router();
 

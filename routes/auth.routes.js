@@ -9,7 +9,7 @@ import {
   getStatus,
   updateStatus,
 } from "../controllers/auth.controller.js";
-import { isAuthenticated } from "../middleware/isAuthenticated.middleware.js";
+import { isAuthenticated } from "../middleware/Authentication.middleware.js";
 
 const router = express.Router();
 
