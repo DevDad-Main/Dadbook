@@ -15,12 +15,11 @@ export const signupValidation = [
   body("email")
     .isEmail()
     .withMessage("Please enter a valid email")
-    .custom((value, { req }) => {
-      return User.findOne({ email: value }).then((userDoc) => {
-        if (userDoc) {
-          return Promise.reject("Email address already exists");
-        }
-      });
+    .custom(async (value, { req }) => {
+      const user = await User.findOne({ email: value });
+      if (user) {
+        return Promise.reject("Email address already exists");
+      }
     })
     .normalizeEmail(),
 
