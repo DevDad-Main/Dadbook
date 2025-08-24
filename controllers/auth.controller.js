@@ -37,7 +37,14 @@ export async function signup(req, res, next) {
 
 //#region Login
 export async function login(req, res, next) {
+  const errors = validationResult(req);
   const { email, password } = req.body;
+  console.log(email, password);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const user = await User.findOne({ email: email });
     if (!user) {
@@ -55,9 +62,9 @@ export async function login(req, res, next) {
         expiresIn: "1h",
       },
     );
-    res.status(200).json({ token: token, userId: user._id.toString() });
+    return res.status(200).json({ token: token, userId: user._id.toString() });
   } catch (err) {
-    next(err);
+    throw new ApiError(401, "Not Authenticated");
   }
 }
 //#endregion

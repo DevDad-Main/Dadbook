@@ -55,8 +55,8 @@ app.use(
 app.use(bodyParser.json());
 app.use("/images", express.static(path.join(__dirname, "images")));
 
-app.use("api/v1/feed", feedRoutes);
-app.use("api/v1/auth", authRoutes);
+app.use("/api/v1/feed", feedRoutes);
+app.use("/api/v1/auth", authRoutes);
 //#endregion
 
 //#region MongoDB/Mongoose Connection w/Socket IO
